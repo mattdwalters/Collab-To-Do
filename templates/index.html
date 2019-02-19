@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+			<title>WeDo</title>
+			<link rel = "stylesheet" type = "text/css" href = "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+			<link href='https://fonts.googleapis.com/css?family=Lobster' rel='stylesheet'>
+			<link href="https://fonts.googleapis.com/css?family=Raleway|Montserrat" rel="stylesheet">
+			<link rel="stylesheet" type="text/css" href="../static/style.css">
+
+	</head>
+	<style>
+	#main_splash_welcome {
+		font-family: "Montserrat";
+		font-size: 70px;
+	}
+
+	body {
+		margin: auto;
+		width: 50%;
+		padding: 12em;
+		text-align: center;
+	}
+
+	h1 {
+		color: black;
+	}
+
+	button {
+		font-family: "Montserrat";
+	}
+	</style>
+	<body>
+		<div>
+			<h1 id = "main_splash_welcome">WeDo&#10003;</h1>
+			<button type = "button" class = "btn"><a href = "{{ url_for('login') }}">Login Here</button>
+			<button type = "button" class = "btn"><a href = "{{ url_for('newUser') }}">Create New Account</button>
+		</div>
+	</body>
+</html>
