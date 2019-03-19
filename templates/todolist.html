@@ -39,47 +39,36 @@
     
     <body>
         <script>
-            $(document).ready(function() {
-                
-                $(".delete").click(function(e){
-                    var table = document.getElementById("browse");
-                    var row = table.insertRow($("#browse").length);
-                    var cell1 = row.insertCell(0);
-                    var cell2 = row.insertCell(1);
-                    //cell1.innerHTML = $("#subscriptions").closest('tr').find(".event_type").html();
-                    cell1.innerHTML = "Sports";
-                    console.log($("#subscriptions").closest('tr'));
-                    cell2.innerHTML = "<button class='btn delete' type='button'>&#x2b;</button>";
-                    $(this).closest('tr').remove();
-                });
 
-                $(".add").click(function(e) {
-                    var table = document.getElementById("subscriptions");
-                    var row = table.insertRow($("#subscriptions").length);
-                    var cell1 = row.insertCell(0);
-                    var cell2 = row.insertCell(1);
-                    //cell1.innerHTML = $("#browse").closest('tr').find(".event_type").html();
-                    cell1.innerHTML = "Community";
-                    cell2.innerHTML = "<button class='btn add' type='button'>&#10005;</button>";
-                    $(this).closest('tr').remove();
+            $(document).ready(function() {
+                $('.delete').on('click', function(e) {
+                   $(this).closest('tr').remove();
                 });
             });
+
         </script>
-        <button type = "button" class = "btn"><a style = "color: black; text-decoration: none;" href = "/">Back</a></button>
+        <button type = "button" class = "btn"><a style = "color: black; text-decoration: none;" href = "{{ url_for('home') }}">Back</a></button>
 
         <h1>To Do List</h1>
+
         <table class = "table">
             <thead>
-                <td>Name</td>
-                <td>To Do</td>
-                <td></td>
+                <th>Name</th>
+                <th>To Do</th>
+                <th></th>
             </thead>
              
             {% for row in todo_list %}
                 <tr>
-                   <td>{{ row["username"] }}</td>
+                   <td>{{ row["author"] }}</td>
                    <td>{{ row["itemname"] }}</td>
-                   <td><input type="checkbox"></td>
+                   <td>
+                        <form action="{{ url_for('delete_todo') }}" method="post">
+                            <input type="hidden" name="iid" value="{{ row.iid }}">
+                            <input type="hidden" name="gid" value="{{ row.gid }}">
+                            <button type="submit">&#x2713;</button>
+                        </form>
+                   </td>
                 </tr>
             {% endfor %}
         </table>
@@ -92,19 +81,17 @@
                         <h4 class="modal-title">To Do</h4>
                         <button type="button" class="close" data-dismiss="modal">&times;</button>
                     </div>
-                    <div class="modal-body">
-                        To do: <input type="text"><br>
-                        Location: <input type="text"><br>
-                        Repeat: <select>
-                            <option value="volvo">Daily</option>
-                            <option value="saab">Weekly</option>
-                            <option value="opel">Monthly</option>
-                            <option value="audi">Custom</option>
+                    <form method="post">
+                        To do: <input name="itemname" type="text" value="{{ request.form.itemname }}"><br>
+                        Location: <input name="location" type="text" value="{{ request.form.location }}"><br>
+                        Repeat: <select name="repeat" value="{{ request.form.repeat }}">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="custom">Custom</option>
                         </select>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Done</button>
-                    </div>
+                        <button type="submit" class="btn btn-default">Done</button>
+                    </form>
                 </div>
             </div>
         </div>  

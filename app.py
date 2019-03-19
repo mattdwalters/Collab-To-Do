@@ -15,6 +15,8 @@ def setup_database():
     }
 
     conn.execute('CREATE TABLE IF NOT EXISTS user (uid INTEGER PRIMARY KEY AUTOINCREMENT, \
+                                                firstname TEXT, \
+                                                lastname TEXT, \
                                                 username TEXT, \
                                                 password TEXT);')
 
@@ -23,12 +25,11 @@ def setup_database():
 
     conn.execute('CREATE TABLE IF NOT EXISTS groups (gid INTEGER PRIMARY KEY AUTOINCREMENT, \
                                                 groupname TEXT, \
+                                                description TEXT, \
                                                 password TEXT);')
 
-    conn.execute('CREATE TABLE IF NOT EXISTS grouplist (iid INTEGER PRIMARY KEY, \
-                                                gid INTEGER);')
-
     conn.execute('CREATE TABLE IF NOT EXISTS todolist (iid INTEGER PRIMARY KEY AUTOINCREMENT, \
+                                                gid INTEGER, \
                                                 author TEXT, \
                                                 itemname TEXT, \
                                                 location TEXT, \
@@ -39,7 +40,6 @@ def setup_database():
 setup_database()
 
 app = Flask(__name__)
-
 
 @app.route("/")
 def main():
@@ -57,18 +57,16 @@ def login():
 
     # Login
     if request.method == 'POST':
-        session['user'] = request.form['username']
+        session['username'] = request.form['username']
         stored_password = cur.execute("SELECT password FROM user WHERE username = " +
                                       "\'" + sanitizeInput(request.form['username']) + "\'").fetchone()
-        print(request.form['password'])
-        print(stored_password)
         if request.form['password'] != stored_password:
             error = 'Invalid credentials, please try again'
         else:
             cur.execute("SELECT uid FROM user WHERE username = " + "\'" + sanitizeInput(request.form['username']) + "\'")
             uid = cur.fetchone()
             session['uid'] = uid
-            return redirect(url_for('toDoList'))
+            return redirect(url_for('home'))
     return render_template('login.html', error = error)
 
 @app.route("/newUser", methods=['GET','POST'])
@@ -94,8 +92,9 @@ def newUser():
             try:
                 with sql.connect(DATABASE) as con:
                     cur = con.cursor()
-                    user_credentials = (sanitizeInput(request.form['username']), sanitizeInput(request.form['password']))
-                    cur.execute("INSERT INTO user VALUES (NULL, ?, ?)", user_credentials)
+                    user_credentials = (sanitizeInput(request.form['firstname']), sanitizeInput(request.form['lastname']), \
+                        sanitizeInput(request.form['username']), sanitizeInput(request.form['password']))
+                    cur.execute("INSERT INTO user VALUES (NULL, ?, ?, ?, ?)", user_credentials)
                     con.commit()
             except:
                 con.rollback()
@@ -106,8 +105,25 @@ def newUser():
 
     return render_template('new_user.html', error=error)
 
-@app.route('/todolist', methods=['GET', 'POST'])
-def toDoList():
+@app.route('/home')
+def home():
+    group_list = []
+
+    conn = sql.connect(DATABASE, timeout=10)
+    conn.row_factory = sql.Row
+    cur = conn.cursor()
+
+    cur.execute('SELECT gid, \
+                    groupname, \
+                    description \
+                FROM groups')
+
+    group_list = cur.fetchall()
+
+    return render_template('home.html', group_list=group_list)
+
+@app.route('/todolist/<int:gid>', methods=['GET', 'POST'])
+def toDoList(gid):
     todo_list = []
 
     # Set up db connection:
@@ -115,13 +131,61 @@ def toDoList():
     conn.row_factory = sql.Row
     cur = conn.cursor()
 
-    cur.execute('SELECT author, \
-                    itemname, \
-                FROM todolist;')
+    cur.execute('SELECT gid, \
+                    iid, \
+                    author, \
+                    itemname \
+                FROM todolist \
+                WHERE gid =' + str(gid) + ';')
 
     todo_list = cur.fetchall()
 
-    return render_template('todolist.html', todo_list=todo_list)
+    if request.method == 'POST':
+        try:
+            author = session["username"]
+            location = request.form["location"]
+            item_name = request.form["itemname"]
+            repeat = request.form["repeat"]
+
+            with sql.connect(DATABASE) as con:
+                item_info = (gid, author, item_name, location, repeat)
+                con.row_factory = sql.Row
+                cur = con.cursor()
+                cur.execute("INSERT INTO todolist VALUES (NULL, ?, ?, ?, ?, ?)", item_info)
+                con.commit()
+                cur.execute('SELECT author, \
+                                itemname \
+                            FROM todolist \
+                            WHERE gid =' + str(gid) + ';')
+                todo_list = cur.fetchall()
+                return render_template('todolist.html', todo_list=todo_list, gid=gid)
+        except:
+            conn.rollback()
+            msg = "Error. Item not created."
+            return render_template("error_page.html", msg = msg)
+
+        conn.close()
+
+    return render_template('todolist.html', todo_list=todo_list, gid=gid)
+
+@app.route('/delete_todo', methods=['POST'])
+def delete_todo():
+    iid = request.form['iid']
+    gid = request.form['gid']
+    todo_list = []
+
+    # Set up db connection:
+    conn = sql.connect(DATABASE, timeout=10)
+    conn.row_factory = sql.Row
+    cur = conn.cursor()
+
+    cur.execute('DELETE \
+                FROM todolist \
+                WHERE iid =' + str(iid) + ';')
+
+    conn.commit()
+
+    return redirect(url_for('toDoList', gid=gid))
 
 def sanitizeInput(input):
     return input.replace('"','\"').replace("'","\'")

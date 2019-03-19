@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<title>User Events</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+		<script type="text/javascript" src="../static/scripts.js"></script>
+		<link rel = "stylesheet" type = "text/css" href = "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    	<link href='https://fonts.googleapis.com/css?family=Lobster' rel='stylesheet'>
+    	<link href="https://fonts.googleapis.com/css?family=Raleway|Montserrat" rel="stylesheet">
+    	<link rel="stylesheet" type="text/css" href="../static/style.css">
+	</head>
+	<style>
+
+	.features-wrap {
+	    display: flex;
+	    flex-wrap: wrap;
+	    justify-content: center;
+	    margin-right: -12px;
+	    margin-left: -12px;
+	    margin-top: -12px;
+	}
+
+	.feature-link {
+		color: black;
+		text-decoration: none;
+	}
+
+	.feature-link:hover {
+		color: #bababa;
+		text-decoration: none;
+	}
+
+	.feature {
+	    padding: 12px;
+	    width: 276px;
+	    max-width: 276px;
+	    height: 316px;
+	    max-height: 316px;
+	    flex-grow: 1;
+	}
+	.feature-inner {
+		border-radius: 10px;
+	    position: relative;
+	    height: 100%;
+	    background: #fff;
+	    padding: 40px 24px;
+	    box-shadow: 0 16px 48px rgba(32,41,50,0.12);
+	}
+	.feature-icon {
+	    display: flex;
+	    justify-content: center;
+	}
+
+	h2 {
+	    margin-top: 24px;
+	    margin-bottom: 4px;
+	}
+
+	.text-sm {
+	    font-size: 18px;
+	    line-height: 27px;
+	    letter-spacing: -0.1px;
+	}
+
+	</style>
+	<body>
+		<div>
+			<h1>Home</h1>
+		</div>
+		<div class="features-wrap">
+		{% for row in group_list %}
+			<a class = "feature-link" href = "{{ url_for('toDoList', gid=row.gid) }}">
+	            <div class="feature">
+	            	<div class="feature-inner">
+	                	<h2 class="feature-title">{{ row['groupname'] }}</h2>
+	                	<!-- Should be a 120 char limit -->
+	                	<p class="text-sm">
+	                  	{{ row['description'] }}
+	                	</p>
+	              	</div>
+	            </div>
+	        </a>
+	    {% endfor %}
+	    </div>
+	</body>
+</html>
