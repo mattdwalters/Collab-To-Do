@@ -105,13 +105,37 @@ def newUser():
 
     return render_template('new_user.html', error=error)
 
-@app.route('/home')
+@app.route('/home', methods=["GET", "POST"])
 def home():
     group_list = []
 
     conn = sql.connect(DATABASE, timeout=10)
     conn.row_factory = sql.Row
     cur = conn.cursor()
+
+    if request.method == 'POST':
+        try:
+            group_name = request.form["groupname"]
+            description = request.form["description"]
+            password = request.form["password"]
+            confirm_password = request.form["confirmpassword"]
+
+            if password != confirm_password:
+                error = "Passwords do not match"
+            else:
+                with sql.connect(DATABASE) as con:
+                    group_info = (group_name, description, password)
+                    con.row_factory = sql.Row
+                    cur = con.cursor()
+                    cur.execute("INSERT INTO groups VALUES (NULL, ?, ?, ?)", group_info)
+                    con.commit()
+            print("DEBUG8")
+        except:
+            conn.rollback()
+            msg = "Error. Item not created."
+            return render_template("error_page.html", msg = msg)
+
+        conn.close()
 
     cur.execute('SELECT gid, \
                     groupname, \
@@ -131,15 +155,6 @@ def toDoList(gid):
     conn.row_factory = sql.Row
     cur = conn.cursor()
 
-    cur.execute('SELECT gid, \
-                    iid, \
-                    author, \
-                    itemname \
-                FROM todolist \
-                WHERE gid =' + str(gid) + ';')
-
-    todo_list = cur.fetchall()
-
     if request.method == 'POST':
         try:
             author = session["username"]
@@ -153,18 +168,21 @@ def toDoList(gid):
                 cur = con.cursor()
                 cur.execute("INSERT INTO todolist VALUES (NULL, ?, ?, ?, ?, ?)", item_info)
                 con.commit()
-                cur.execute('SELECT author, \
-                                itemname \
-                            FROM todolist \
-                            WHERE gid =' + str(gid) + ';')
-                todo_list = cur.fetchall()
-                return render_template('todolist.html', todo_list=todo_list, gid=gid)
         except:
             conn.rollback()
             msg = "Error. Item not created."
             return render_template("error_page.html", msg = msg)
 
         conn.close()
+
+    cur.execute('SELECT gid, \
+                    iid, \
+                    author, \
+                    itemname \
+                FROM todolist \
+                WHERE gid =' + str(gid) + ';')
+
+    todo_list = cur.fetchall()
 
     return render_template('todolist.html', todo_list=todo_list, gid=gid)
 
@@ -190,13 +208,9 @@ def delete_todo():
 def sanitizeInput(input):
     return input.replace('"','\"').replace("'","\'")
 
-def getGroupId():
-    # set up db connection:
-    con = sql.connect(DATABASE, timeout=10)
-    con.row_factory = lambda cursor, row: row[0]
-    cur = con.cursor()
-
-    cur.execute('')
+def loginCheck():
+    if session['username'] == "":
+        return redirect(url_for('login'))
 
 if __name__ == "__main__":
     app.run()
