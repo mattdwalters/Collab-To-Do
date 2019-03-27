@@ -37,6 +37,7 @@ def setup_database():
                                                 author TEXT, \
                                                 itemname TEXT, \
                                                 location TEXT, \
+                                                assignee TEXT, \
                                                 repeat TEXT);')
 
     cursor.close()
@@ -159,7 +160,15 @@ def home():
 
     list_list = cur.fetchall()
 
-    return render_template('home.html', list_list=list_list)
+    cur.execute('SELECT list.lid, todolist.itemname, list.listname \
+                FROM todolist, list \
+                WHERE todolist.assignee = ' + "\'" + str(session['username']) + "\'" + ';')
+
+    assigned_items = cur.fetchall()
+
+    print(assigned_items)
+
+    return render_template('home.html', list_list=list_list, assigned_items=assigned_items)
 
 @app.route('/join_list', methods=['POST'])
 def join_list():
@@ -226,12 +235,14 @@ def toDoList(lid):
             location = request.form["location"]
             item_name = request.form["itemname"]
             repeat = request.form["repeat"]
+            assignee_raw = request.form['assignee']
+            assignee = assignee_raw[assignee_raw.find("(") + 1:assignee_raw.find(")")]
 
             with sql.connect(DATABASE) as con:
-                item_info = (lid, author, item_name, location, repeat)
+                item_info = (lid, author, item_name, location, assignee, repeat)
                 con.row_factory = sql.Row
                 cur = con.cursor()
-                cur.execute("INSERT INTO todolist VALUES (NULL, ?, ?, ?, ?, ?)", item_info)
+                cur.execute("INSERT INTO todolist VALUES (NULL, ?, ?, ?, ?, ?, ?)", item_info)
                 con.commit()
         except:
             conn.rollback()
@@ -239,6 +250,16 @@ def toDoList(lid):
             return render_template("error_page.html", msg = msg)
 
         conn.close()
+
+    cur.execute('SELECT user.uid, firstname, lastname, username \
+                FROM user, userlist \
+                WHERE user.uid = userlist.uid AND lid=' + str(lid) + ';')
+
+    members = cur.fetchall()
+    members_arr = []
+
+    for uid, firstname, lastname, username in members:
+        members_arr.append(firstname + ' ' + lastname + " (" + username + ")")
 
     cur.execute('SELECT lid, \
                     iid, \
@@ -255,7 +276,7 @@ def toDoList(lid):
 
     list_info = cur.fetchone()
 
-    return render_template('todolist.html', todo_list=todo_list, lid=lid, list_code=list_info["listcode"], list_owner=list_info['listowner'], curr_user=session['username'])
+    return render_template('todolist.html', todo_list=todo_list, lid=lid, list_info=list_info, curr_user=session['username'], members_arr=members_arr)
 
 @app.route('/delete_todo', methods=['POST'])
 def delete_todo():
