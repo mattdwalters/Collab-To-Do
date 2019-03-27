@@ -81,7 +81,7 @@
 		text-align: center;
 	}
 
-	#join-group-bar {
+	#join-list-bar {
 		border: #eeeeee solid 1px;
 		background-color: #fff;
 		border-radius: 4px;
@@ -93,13 +93,13 @@
   		transition: box-shadow 0.2s ease-in-out;
 	}
 
-	#join-group-bar:hover {
+	#join-list-bar:hover {
 		-webkit-box-shadow: 0px 5px 10px -1px rgba(215,215,215,1);
 		-moz-box-shadow: 0px 5px 10px -1px rgba(215,215,215,1);
 		box-shadow: 0px 5px 10px -1px rgba(215,215,215,1);
 	}
 
-	#join-group-icon {
+	#join-list-icon {
 		height: 15px;
 		width: 15px;
 		margin: 5px;
@@ -107,12 +107,12 @@
 		float: left;
 	}
 
-	#join-group-bar-span {
+	#join-list-bar-span {
 	    display: block;
 	    overflow: hidden;
 	}
 
-	#join-group-bar-input {
+	#join-list-bar-input {
 		width: 100%;
 		border: none;
 		border-color: transparent;
@@ -151,12 +151,12 @@
 			<div id="logo-container" class="col-sm-1">
 				<h1 id="logo">&#x2713;</h1>
 			</div>
-			<div id="join-group" class="col-sm-6">
-				<div id="join-group-bar">
-					<img id="join-group-icon" src="../static/images/link.png">
-					<span id="join-group-bar-span">
-						<form action="{{ url_for('join_group') }}" method='post'>
-							<input id="join-group-bar-input" type="text" name="groupcode" value="{{ request.form.groupcode }}" placeholder="Join Group">
+			<div id="join-list" class="col-sm-6">
+				<div id="join-list-bar">
+					<img id="join-list-icon" src="../static/images/link.png">
+					<span id="join-list-bar-span">
+						<form action="{{ url_for('join_list') }}" method='post'>
+							<input id="join-list-bar-input" type="text" name="listcode" value="{{ request.form.listcode }}" placeholder="Join list" autocomplete="off">
 						</form>
 					</span>
 				</div>
@@ -167,20 +167,20 @@
 						<a href="" class="navbar-tab">Profile</a>
 					</li>
 					<li>
-						<a id="new-group-button" data-toggle="modal" data-target="#newGroup" class="navbar-tab">New Group</a>
+						<a id="new-list-button" data-toggle="modal" data-target="#newlist" class="navbar-tab">New list</a>
 					</li>
 				</ul>
 			</div>
 		</div>
-		<div class="modal fade" id="newGroup" role="dialog">
+		<div class="modal fade" id="newlist" role="dialog">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h4 class="modal-title">New Group</h4>
+                        <h4 class="modal-title">New list</h4>
                         <button type="button" class="close" data-dismiss="modal">&times;</button>
                     </div>
                     <form method="post">
-                        Name: <input name="groupname" type="text" value="{{ request.form.groupname }}"><br>
+                        Name: <input name="listname" type="text" value="{{ request.form.listname }}"><br>
                         Description: <input name="description" type="text" value="{{ request.form.description }}"><br>
                         Password: <input name="password" type="text" value="{{ request.form.password }}"><br>
                         Confirm Password: <input name="confirmpassword" type="text" value="{{ request.form.confirmpassword }}"><br>
@@ -190,25 +190,29 @@
             </div>
         </div>
         <div class="row">
-        	<div id="groups-header" class="offset-sm-1">
-        		<h1>Your Groups:</h1>
+        	<div id="lists-header" class="offset-sm-1">
+        		<h1>Your lists:</h1>
         	</div>
         </div>
         <div class="row">
 	        <div class="features-wrap offset-sm-1 col-sm-10">
-			{% for row in group_list %}
-				<a class = "feature-link" href = "{{ url_for('toDoList', gid=row.gid) }}">
-		            <div class="feature">
-		            	<div class="feature-inner">
-		                	<h2 class="feature-title">{{ row['groupname'] }}</h2>
-		                	<!-- Should be a 120 char limit -->
-		                	<p class="text-sm">
-		                  	{{ row['description'] }}
-		                	</p>
-		              	</div>
-		            </div>
-		        </a>
-		    {% endfor %}
+	        {% if not list_list %}
+				<p>No lists yet! Try creating one or entering a list code above</p>
+			{% else %}
+				{% for row in list_list %}
+					<a class = "feature-link" href = "{{ url_for('toDoList', lid=row.lid) }}">
+			            <div class="feature">
+			            	<div class="feature-inner">
+			                	<h2 class="feature-title">{{ row['listname'] }}</h2>
+			                	<!-- Should be a 120 char limit -->
+			                	<p class="text-sm">
+			                  	{{ row['description'] }}
+			                	</p>
+			              	</div>
+			            </div>
+			        </a>
+			    {% endfor %}
+			{% endif %}
 		    </div>
 		</div>
 	</body>

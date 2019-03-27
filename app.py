@@ -22,17 +22,18 @@ def setup_database():
                                                 username TEXT, \
                                                 password TEXT);')
 
-    conn.execute('CREATE TABLE IF NOT EXISTS usergroup (gid INTEGER, \
+    conn.execute('CREATE TABLE IF NOT EXISTS userlist (lid INTEGER, \
                                                 uid INTEGER);')
 
-    conn.execute('CREATE TABLE IF NOT EXISTS groups (gid INTEGER PRIMARY KEY AUTOINCREMENT, \
-                                                groupname TEXT, \
+    conn.execute('CREATE TABLE IF NOT EXISTS list (lid INTEGER PRIMARY KEY AUTOINCREMENT, \
+                                                listowner TEXT, \
+                                                listname TEXT, \
                                                 description TEXT, \
-                                                groupcode TEXT, \
+                                                listcode TEXT, \
                                                 password TEXT);')
 
     conn.execute('CREATE TABLE IF NOT EXISTS todolist (iid INTEGER PRIMARY KEY AUTOINCREMENT, \
-                                                gid INTEGER, \
+                                                lid INTEGER, \
                                                 author TEXT, \
                                                 itemname TEXT, \
                                                 location TEXT, \
@@ -113,7 +114,7 @@ def home():
     if session['username'] == '':
         return redirect(url_for('login'))
 
-    group_list = []
+    list_list = []
 
     conn = sql.connect(DATABASE, timeout=10)
     conn.row_factory = sql.Row
@@ -121,25 +122,27 @@ def home():
 
     if request.method == 'POST':
         try:
-            group_name = request.form["groupname"]
+            list_owner = session["username"]
+            list_name = request.form["listname"]
             description = request.form["description"]
-            group_code = group_code_gen()
+            list_code = list_code_gen()
             password = request.form["password"]
             confirm_password = request.form["confirmpassword"]
 
             if password != confirm_password:
                 error = "Passwords do not match"
             else:
-                # Execute on "New Group" button click
+                # Execute on "New list" button click
                 with sql.connect(DATABASE) as con:
-                    group_info = (group_name, description, group_code, password)
+                    list_info = (list_owner, list_name, description, list_code, password)
                     con.row_factory = sql.Row
                     cur = con.cursor()
-                    cur.execute("INSERT INTO groups VALUES (NULL, ?, ?, ?, ?)", group_info)
+                    cur.execute("INSERT INTO list VALUES (NULL, ?, ?, ?, ?, ?)", list_info)
                     con.commit()
-                    cur.execute("SELECT gid FROM groups WHERE groupcode=" + "\'" + str(group_code) + "\'" + ";")
-                    gid = cur.fetchone()
-                    cur.execute("INSERT INTO usergroup VALUES (?, ?)", member_info)
+                    cur.execute("SELECT lid FROM list WHERE listcode=" + "\'" + str(list_code) + "\'" + ";")
+                    lid = cur.fetchone()
+                    member_info = (lid['lid'], session['uid'])
+                    cur.execute("INSERT INTO userlist VALUES (?, ?)", member_info)
                     con.commit()
         except:
             conn.rollback()
@@ -148,34 +151,68 @@ def home():
 
         conn.close()
 
-    cur.execute('SELECT groups.gid, \
-                    groupname, \
+    cur.execute('SELECT list.lid, \
+                    listname, \
                     description \
-                FROM groups, usergroup \
-                WHERE groups.gid = usergroup.gid AND usergroup.uid = ' + "\'" + str(session['uid']) + "\'" + ';')
+                FROM list, userlist \
+                WHERE list.lid = userlist.lid AND userlist.uid = ' + "\'" + str(session['uid']) + "\'" + ';')
 
-    group_list = cur.fetchall()
+    list_list = cur.fetchall()
 
-    return render_template('home.html', group_list=group_list)
+    return render_template('home.html', list_list=list_list)
 
-@app.route('/join_group', methods=['POST'])
-def join_group():
-    groupcode=request.form['groupcode']
+@app.route('/join_list', methods=['POST'])
+def join_list():
+    listcode=request.form['listcode']
 
     conn = sql.connect(DATABASE, timeout=10)
     conn.row_factory = sql.Row
     cur = conn.cursor()
 
-    cur.execute("SELECT gid FROM groups WHERE groupcode=" + "\'" + str(groupcode) + "\'" + ";")
-    gid = cur.fetchone()
-    member_info = (gid['gid'], session['uid'])
-    cur.execute("INSERT INTO usergroup VALUES (?, ?)", member_info)
+    cur.execute("SELECT lid FROM list WHERE listcode=" + "\'" + str(listcode) + "\'" + ";")
+    lid = cur.fetchone()
+    member_info = (lid['lid'], session['uid'])
+    cur.execute("INSERT INTO userlist VALUES (?, ?)", member_info)
     conn.commit()
 
     return redirect(url_for('home'))
 
-@app.route('/todolist/<int:gid>', methods=['GET', 'POST'])
-def toDoList(gid):
+@app.route('/leave_list/<int:lid>')
+def leave_list(lid):
+    conn = sql.connect(DATABASE, timeout=10)
+    conn.row_factory = sql.Row
+    cur = conn.cursor()
+
+    cur.execute('DELETE \
+                FROM userlist \
+                WHERE uid = ' + str(session['uid']) + ' AND lid =' + str(lid) + ';')
+
+    conn.commit()
+
+    return redirect(url_for('home'))
+
+@app.route('/delete_list/<int:lid>')
+def delete_list(lid):
+    conn = sql.connect(DATABASE, timeout=10)
+    conn.row_factory = sql.Row
+    cur = conn.cursor()
+
+    cur.execute('DELETE \
+                FROM userlist \
+                WHERE lid = ' + str(lid) + ";")
+
+    conn.commit()
+
+    cur.execute('DELETE \
+                FROM list \
+                WHERE lid = ' + str(lid) + ";")
+
+    conn.commit()
+
+    return redirect(url_for('home'))
+
+@app.route('/todolist/<int:lid>', methods=['GET', 'POST'])
+def toDoList(lid):
     todo_list = []
 
     # Set up db connection:
@@ -191,7 +228,7 @@ def toDoList(gid):
             repeat = request.form["repeat"]
 
             with sql.connect(DATABASE) as con:
-                item_info = (gid, author, item_name, location, repeat)
+                item_info = (lid, author, item_name, location, repeat)
                 con.row_factory = sql.Row
                 cur = con.cursor()
                 cur.execute("INSERT INTO todolist VALUES (NULL, ?, ?, ?, ?, ?)", item_info)
@@ -203,28 +240,27 @@ def toDoList(gid):
 
         conn.close()
 
-    cur.execute('SELECT gid, \
+    cur.execute('SELECT lid, \
                     iid, \
                     author, \
                     itemname \
                 FROM todolist \
-                WHERE gid =' + str(gid) + ';')
+                WHERE lid =' + str(lid) + ';')
 
     todo_list = cur.fetchall()
 
-    cur.execute('SELECT groupcode \
-                FROM groups \
-                WHERE gid=' + str(gid) + ';')
+    cur.execute('SELECT listowner, listcode \
+                FROM list \
+                WHERE lid=' + str(lid) + ';')
 
-    group_code = cur.fetchone()
+    list_info = cur.fetchone()
 
-    return render_template('todolist.html', todo_list=todo_list, gid=gid, group_code=group_code["groupcode"])
+    return render_template('todolist.html', todo_list=todo_list, lid=lid, list_code=list_info["listcode"], list_owner=list_info['listowner'], curr_user=session['username'])
 
 @app.route('/delete_todo', methods=['POST'])
 def delete_todo():
     iid = request.form['iid']
-    gid = request.form['gid']
-    todo_list = []
+    lid = request.form['lid']
 
     # Set up db connection:
     conn = sql.connect(DATABASE, timeout=10)
@@ -237,12 +273,35 @@ def delete_todo():
 
     conn.commit()
 
-    return redirect(url_for('toDoList', gid=gid))
+    return redirect(url_for('toDoList', lid=lid))
+
+@app.route('/todolist/<int:lid>/members', methods=['GET'])
+def todo_members(lid):
+    # Set up db connection:
+    conn = sql.connect(DATABASE, timeout=10)
+    conn.row_factory = sql.Row
+    cur = conn.cursor()
+
+    cur.execute('SELECT firstname, lastname, username \
+                FROM user, userlist, list \
+                WHERE list.listowner = user.username AND \
+                    user.uid = userlist.uid AND list.lid =' + str(lid) + ';' )
+
+    list_owner = cur.fetchone()
+
+    cur.execute('SELECT firstname, lastname, username \
+                FROM user, userlist \
+                WHERE user.username <> ' + "\'" + list_owner['username'] + "\'" + 'AND user.uid = userlist.uid AND lid =' + str(lid) + ';')
+
+    members = cur.fetchall()
+
+    return render_template('todo_members.html', members=members, list_owner=list_owner)
+
 
 def sanitize_input(input):
     return input.replace('"','\"').replace("'","\'")
 
-def group_code_gen(size=10, chars=string.ascii_uppercase + string.digits):
+def list_code_gen(size=10, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
 def login_check():
