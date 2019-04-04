@@ -160,15 +160,15 @@ def home():
 
     list_list = cur.fetchall()
 
-    cur.execute('SELECT list.lid, todolist.itemname, list.listname \
+    cur.execute('SELECT todolist.itemname, \
+                    todolist.lid, \
+                    list.listname \
                 FROM todolist, list \
-                WHERE todolist.assignee = ' + "\'" + str(session['username']) + "\'" + ';')
+                WHERE list.lid = todolist.lid AND todolist.assignee = ' + "\'" + str(session['username']) + "\'" + ';')
 
     assigned_items = cur.fetchall()
 
-    print(assigned_items)
-
-    return render_template('home.html', list_list=list_list, assigned_items=assigned_items)
+    return render_template('home.html', list_list=list_list, assigned_items=assigned_items, assigned_length=len(assigned_items))
 
 @app.route('/join_list', methods=['POST'])
 def join_list():
@@ -270,7 +270,7 @@ def toDoList(lid):
 
     todo_list = cur.fetchall()
 
-    cur.execute('SELECT listowner, listcode \
+    cur.execute('SELECT listname, listowner, listcode \
                 FROM list \
                 WHERE lid=' + str(lid) + ';')
 
