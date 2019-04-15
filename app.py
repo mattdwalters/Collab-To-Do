@@ -36,7 +36,6 @@ def setup_database():
                                                 lid INTEGER, \
                                                 author TEXT, \
                                                 itemname TEXT, \
-                                                location TEXT, \
                                                 assignee TEXT, \
                                                 repeat TEXT);')
 
@@ -232,17 +231,16 @@ def toDoList(lid):
     if request.method == 'POST':
         try:
             author = session["username"]
-            location = request.form["location"]
             item_name = request.form["itemname"]
             repeat = request.form["repeat"]
             assignee_raw = request.form['assignee']
             assignee = assignee_raw[assignee_raw.find("(") + 1:assignee_raw.find(")")]
 
             with sql.connect(DATABASE) as con:
-                item_info = (lid, author, item_name, location, assignee, repeat)
+                item_info = (lid, author, item_name, assignee, repeat)
                 con.row_factory = sql.Row
                 cur = con.cursor()
-                cur.execute("INSERT INTO todolist VALUES (NULL, ?, ?, ?, ?, ?, ?)", item_info)
+                cur.execute("INSERT INTO todolist VALUES (NULL, ?, ?, ?, ?, ?)", item_info)
                 con.commit()
         except:
             conn.rollback()
@@ -264,6 +262,7 @@ def toDoList(lid):
     cur.execute('SELECT lid, \
                     iid, \
                     author, \
+                    assignee, \
                     itemname \
                 FROM todolist \
                 WHERE lid =' + str(lid) + ';')
@@ -303,7 +302,7 @@ def todo_members(lid):
     conn.row_factory = sql.Row
     cur = conn.cursor()
 
-    cur.execute('SELECT firstname, lastname, username \
+    cur.execute('SELECT firstname, lastname, username, listname \
                 FROM user, userlist, list \
                 WHERE list.listowner = user.username AND \
                     user.uid = userlist.uid AND list.lid =' + str(lid) + ';' )
