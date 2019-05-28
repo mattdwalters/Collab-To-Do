@@ -1,7 +1,6 @@
 body {
-	font-family: "Muli";
+	font-family: "Comfortaa";
 	height: 100vh;
-	background-image: linear-gradient(#ffbf01, #ffec63);
 }
 
 .logo {
@@ -105,10 +104,6 @@ body {
 
 /* Join List Bar End */
 
-/* Dropdown Menu */
-
-/* Dropdown Menu End */
-
 #list-container {
 	margin-top: 4em;
 }
@@ -194,13 +189,6 @@ textarea {
 .navbar-custom .nav-item .nav-link:active,
 .navbar-custom .nav-item .nav-link:focus {
     color: #bbb;
-}
-
-body {
-    font-family: "Muli";
-    color: black;
-    height: 100vh;
-    background-image: linear-gradient(#ffbf01, #ffec63);
 }
 
 .autocomplete {
