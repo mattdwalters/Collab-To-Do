@@ -1,5 +1,4 @@
 body {
-	font-family: "Comfortaa";
 	height: 100vh;
 }
 
@@ -306,4 +305,26 @@ textarea {
 
 .navbar-nav{
     flex: 1;
+}
+
+.dropdown-menu:after, .dropdown-menu:before {
+	bottom: 100%;
+	left: 80%;
+	border: solid transparent;
+	content: " ";
+	height: 0;
+	width: 0;
+	position: absolute;
+	pointer-events: none;
+}
+
+.dropdown-menu:after {
+	border-color: rgba(255, 255, 255, 0);
+	border-bottom-color: #fff;
+	border-width: 8px;
+	margin-left: -8px;
+}
+
+.dropdown-menu-custom {
+	margin-top: 2.2em;
 }

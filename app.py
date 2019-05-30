@@ -12,6 +12,8 @@ def setup_database():
     cursor = conn.cursor()
 
     session = {
+        "firstname": "",
+        "lastname": "",
         "username": "",
         "uid": ""
     }
@@ -58,18 +60,28 @@ def login():
     con = sql.connect(DATABASE)
     con.row_factory = lambda cursor, row: row[0]
     cur = con.cursor()
+    
 
     # Login
     if request.method == 'POST':
-        session['username'] = request.form['username']
-        stored_password = cur.execute("SELECT password FROM user WHERE username = " +
-                                      "\'" + sanitize_input(request.form['username']) + "\'").fetchone()
+        session['username'] = sanitize_input(request.form.get('username', False))
+        cur.execute("SELECT password FROM user WHERE username = " +
+                                      "\'" + session['username'] + "\'")
+
+        stored_password = cur.fetchone()
+
         if request.form['password'] != stored_password:
             error = 'Invalid credentials, please try again'
         else:
-            cur.execute("SELECT uid FROM user WHERE username = " + "\'" + sanitize_input(request.form['username']) + "\'")
-            uid = cur.fetchone()
-            session['uid'] = uid
+            session['uid'] = cur.execute("SELECT user.uid \
+                            FROM user WHERE username = " + "\'" + session['username'] + "\'").fetchone()
+
+            session['firstname'] = cur.execute("SELECT user.firstname \
+                            FROM user WHERE username = " + "\'" + session['username'] + "\'").fetchone()
+
+            session['lastname'] = cur.execute("SELECT user.lastname \
+                            FROM user WHERE username = " + "\'" + session['username'] + "\'").fetchone()
+
             return redirect(url_for('home'))
     return render_template('login.html', error = error)
 
@@ -167,7 +179,7 @@ def home():
 
     assigned_items = cur.fetchall()
 
-    return render_template('home.html', list_list=list_list, assigned_items=assigned_items, assigned_length=len(assigned_items))
+    return render_template('home.html', session=session, list_list=list_list, assigned_items=assigned_items, assigned_length=len(assigned_items))
 
 @app.route('/join_list', methods=['POST'])
 def join_list():
@@ -275,7 +287,15 @@ def toDoList(lid):
 
     list_info = cur.fetchone()
 
-    return render_template('todolist.html', todo_list=todo_list, lid=lid, list_info=list_info, curr_user=session['username'], members_arr=members_arr)
+    cur.execute('SELECT todolist.itemname, \
+                    todolist.lid, \
+                    list.listname \
+                FROM todolist, list \
+                WHERE list.lid = todolist.lid AND todolist.assignee = ' + "\'" + str(session['username']) + "\'" + ';')
+
+    assigned_items = cur.fetchall()
+
+    return render_template('todolist.html', session=session, todo_list=todo_list, assigned_items=assigned_items, assigned_length=len(assigned_items), lid=lid, list_info=list_info, curr_user=session['username'], members_arr=members_arr)
 
 @app.route('/delete_todo', methods=['POST'])
 def delete_todo():
@@ -315,7 +335,15 @@ def todo_members(lid):
 
     members = cur.fetchall()
 
-    return render_template('todo_members.html', members=members, list_owner=list_owner)
+    cur.execute('SELECT todolist.itemname, \
+                    todolist.lid, \
+                    list.listname \
+                FROM todolist, list \
+                WHERE list.lid = todolist.lid AND todolist.assignee = ' + "\'" + str(session['username']) + "\'" + ';')
+
+    assigned_items = cur.fetchall()
+
+    return render_template('todo_members.html', session=session, members=members, list_owner=list_owner, assigned_items=assigned_items, assigned_length=len(assigned_items))
 
 
 def sanitize_input(input):

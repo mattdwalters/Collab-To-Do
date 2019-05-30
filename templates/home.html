@@ -12,6 +12,7 @@
 	<style>
 	body {
 		font-family: "M Plus Rounded 1c";
+		background-image: linear-gradient(#ffcd00, #ffec63);
 	}
 	.dropdown-menu:after, .dropdown-menu:before {
 		bottom: 100%;
@@ -30,6 +31,11 @@
 		border-width: 8px;
 		margin-left: -8px;
 	}
+
+	.dropdown-menu-custom {
+		margin-top: 2.2em;
+	}
+
 	</style>
 	<body>
 		<nav class="navbar navbar-expand-lg navbar-custom">
@@ -47,16 +53,16 @@
 		    	<span class="navbar-toggler-icon text-dark"></span>
 		    </button>
 
-		    <div class="collapse navbar-collapse justify-content-end" id="collapsibleNavbar">
-		      	<ul class="navbar-nav">
+		    <div class="collapse navbar-collapse" id="collapsibleNavbar">
+		      	<ul class="navbar-nav justify-content-end">
 		        	<li class="nav-item">
-		          		<a class="nav-link" data-toggle="modal" data-target="#new-list" href="#new-list">Create a List</a>
+		          		<a class="nav-link" data-toggle="modal" data-target="#new-list" href="#new-list">New List</a>
 		        	</li>
 		        	<li class="nav-item dropdown">
 		          		<a class="nav-link" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 		            		To Dos<sup class="text-danger" id="todo-notif"><strong>{% if assigned_items %}{{ assigned_length }}{% endif %}</strong></sup>
 		          		</a>
-		          		<div class="dropdown-menu dropdown-menu-right mt-sm-5 border border-0" id="todo-dropdown" aria-labelledby="navbarDropdown">
+		          		<div class="dropdown-menu dropdown-menu-right dropdown-menu-custom border border-0" id="todo-dropdown" aria-labelledby="navbarDropdown">
 		          		{% if not assigned_items %}
 							<span class="dropdown-item-text">Nothing to do!</span>
 						{% else %}
@@ -70,7 +76,13 @@
 		          		</div>
 		        	</li>
 			        <li class="nav-item">
-			          	<a class="nav-link" href="#">Profile</a>
+			          	<a class="nav-link" href="#" id="profileDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Profile</a>
+                        <div class="dropdown-menu dropdown-menu-right dropdown-menu-custom border border-0 m-3 text-center" id="profile-dropdown">
+                            <img class="profile-icon" src="../static/images/profile-icon.png" width="50px" height="50px"/><br>
+                            <span class="d-block">{{ session['firstname'] }} {{ session['lastname'] }}</span>
+                            <span class="d-block">({{ session['username'] }})</span><br>
+                            <a class="btn new-list-submit" href="{{ url_for('main') }}">Log out</a>
+                        </div>
 			        </li> 
 		      	</ul>
 		    </div>
